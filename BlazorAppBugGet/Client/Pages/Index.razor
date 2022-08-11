@@ -1,0 +1,52 @@
+﻿@page "/"
+@using BlazorAppBugGet.Shared
+@inject HttpClient Http
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+@if (querys.Count>1)
+{
+    @for (var i = 0; i < querys.Count; i++)
+    {
+        <a href="@querys[i]">@querys[i]</a>
+        <p> @responses[i] </p>
+    }
+}
+
+
+
+@code{
+    List<string> querys = new();    
+    List<string> responses= new();
+
+    
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        List<string> controllers = new() { "class1", "class2", "class3" };
+        foreach (var controller in controllers)
+        {
+            var httpRequestMessage = GetHttpRequestMessage($"odata/{controller}");
+            querys.Add(httpRequestMessage.RequestUri.ToString());
+            responses.Add(await GetResponse(httpRequestMessage));
+        }
+        await base.OnInitializedAsync();
+    }
+
+
+    HttpRequestMessage GetHttpRequestMessage(string controller)
+    {
+        var uri = new Uri(Http.BaseAddress, $"{controller}");
+        return new HttpRequestMessage(HttpMethod.Get, uri);
+    }
+    async Task<string> GetResponse(HttpRequestMessage httpRequestMessage)
+    {
+        var response = await Http.SendAsync(httpRequestMessage);
+        
+        var result = await response.Content.ReadAsStringAsync();
+        return result;
+    }
+
+
+}
